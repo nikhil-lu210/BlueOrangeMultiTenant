@@ -27,7 +27,10 @@
                 @auth
                     <a href="{{ route('administration.dashboard.index') }}" class="btn btn-primary mb-4">Go To Dashboard</a>
                 @else
-                    <a href="{{ route('login') }}" class="btn btn-primary mb-4">Login</a>
+                <div class="d-flex">
+                    <a href="{{ route('login') }}" class="btn btn-primary mb-4 me-3">{{ __('Login') }}</a>
+                    <a href="{{ route('register') }}" class="btn btn-dark mb-4">{{ __('Register') }}</a>
+                </div>
                 @endauth
                 <div class="mt-4">
                     <img src="{{ asset('assets/img/illustrations/page-misc-under-maintenance.png') }}" alt="page-misc-under-maintenance"
