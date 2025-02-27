@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Tenant\TenantVerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,12 @@ Route::get('/', function () {
 });
 
 Auth::routes();
+
+Route::get('/verify-tenant/{token}', [TenantVerificationController::class, 'verify'])->name('tenant.verify');
+Route::get('/verification/mail/sent', function () {
+    return view('tenant.auth.verify');
+})->name('tenant.auth.verify');
+
 
 
 /*==============================================================

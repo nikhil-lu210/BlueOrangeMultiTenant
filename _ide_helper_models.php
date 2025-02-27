@@ -531,9 +531,6 @@ namespace App\Models{
  * App\Models\Tenant
  *
  * @property int $id
- * @property string $name
- * @property string $email
- * @property string $password
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property array|null $data
@@ -546,10 +543,7 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant query()
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereData($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereEmail($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Tenant wherePassword($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Tenant whereUpdatedAt($value)
  */
 	class Tenant extends \Eloquent implements \Stancl\Tenancy\Contracts\TenantWithDatabase {}

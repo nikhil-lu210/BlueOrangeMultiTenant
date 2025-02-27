@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Mail\TenantVerificationMail;
+use App\Models\Tenant\TenantRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Mail;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Foundation\Auth\RegistersUsers;
+use App\Http\Requests\TenantRegistrationRequest;
 
 class RegisterController extends Controller
 {
@@ -45,7 +45,7 @@ class RegisterController extends Controller
         $this->middleware('guest');
     }
 
-    
+
     /**
      * Show the application registration form.
      *
@@ -56,57 +56,26 @@ class RegisterController extends Controller
         return view('auth.register');
     }
 
-    /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function validator(array $data)
+
+
+    public function register(TenantRegistrationRequest $request)
     {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-    }
+        DB::transaction(function () use ($request) {
+            // Create the tenant record without triggering automatic DB creation
+            $tenant = TenantRequest::create([
+                'name' => $request->company_name,
+                'super_admin_name' => $request->super_admin_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'verification_token' => Str::random(60),
+            ]);
 
-    /**
-     * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return \App\Models\User
-     */
-    protected function create(array $data)
-    {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
-    }
+            // Send the verification email
+            Mail::to($tenant->email)->send(new TenantVerificationMail($tenant));
+        }, 5);
 
-    /**
-     * Handle a registration request for the application.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
-     */
-    public function register(Request $request)
-    {
-        $this->validator($request->all())->validate();
-
-        event(new Registered($user = $this->create($request->all())));
-
-        $this->guard()->login($user);
-
-        if ($response = $this->registered($request, $user)) {
-            return $response;
-        }
-
-        return $request->wantsJson()
-                    ? new JsonResponse([], 201)
-                    : redirect($this->redirectPath());
+        // Return the verification view
+        return redirect()->route('tenant.auth.verify');
     }
 
     /**
