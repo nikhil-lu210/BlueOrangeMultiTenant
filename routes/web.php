@@ -16,7 +16,7 @@ use App\Http\Controllers\Tenant\TenantVerificationController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('homepage');
 
 Auth::routes();
 
