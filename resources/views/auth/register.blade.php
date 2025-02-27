@@ -59,16 +59,16 @@
                 <div class="d-none d-lg-flex col-lg-7 p-0">
                     <div class="auth-cover-bg auth-cover-bg-color d-flex justify-content-center align-items-center">
                         <img
-                            src="{{ asset('assets/img/illustrations/auth-login-illustration-light.png') }}"
-                            alt="auth-login-cover"
+                            src="{{ asset('assets/img/illustrations/auth-register-illustration-light.png') }}"
+                            alt="auth-register-cover"
                             class="img-fluid my-5 auth-illustration"
-                            data-app-light-img="illustrations/auth-login-illustration-light.png"
-                            data-app-dark-img="illustrations/auth-login-illustration-dark.png"
+                            data-app-light-img="illustrations/auth-register-illustration-light.png"
+                            data-app-dark-img="illustrations/auth-register-illustration-dark.png"
                         />
 
                         <img
                             src="{{ asset('assets/img/illustrations/bg-shape-image-light.png') }}"
-                            alt="auth-login-cover"
+                            alt="auth-register-cover"
                             class="platform-bg"
                             data-app-light-img="illustrations/bg-shape-image-light.png"
                             data-app-dark-img="illustrations/bg-shape-image-dark.png"
@@ -80,21 +80,22 @@
                 <!-- Login -->
                 <div class="d-flex col-12 col-lg-5 align-items-center p-sm-5 p-4">
                     <div class="w-px-400 mx-auto">
-                        <!-- Logo -->
-                        <div class="app-brand mb-4">
-                            <a href="{{ route('login') }}" class="app-brand-link gap-2">
-                                <img src="{{ asset(config('app.logo')) }}" alt="{{ config('app.name') }}" width="30%">
-                            </a>
+                        <div class="text-center">
+                            <!-- Logo -->
+                            <div class="app-brand mb-2">
+                                <a href="{{ route('login') }}" class="m-auto">
+                                    <img src="{{ asset(config('app.logo')) }}" alt="{{ config('app.name') }}" width="30%">
+                                </a>
+                            </div>
+                            <!-- /Logo -->
+                            <h3 class="mb-3 text-center"><b>{{ __('Register') }}</b> {{ __('to') }} {{ config('app.name') }}</h3>
                         </div>
-                        <!-- /Logo -->
-                        <h3 class="mb-3 text-left"><b>{{ __('Register') }}</b> {{ __('to') }} {{ config('app.name') }}</h3>
 
                         <form id="formAuthentication" class="mb-3" method="POST" action="{{ route('register') }}" autocomplete="off">
                             @csrf
                             <div class="mb-3">
-                                <label for="company_name" class="form-label">Company Name <b class="text-danger">*</b></label>
                                 <div class="input-group input-group-merge">
-                                    <input type="text" id="company_name" name="company_name" class="form-control @error('company_name') is-invalid @enderror" value="{{ old('company_name') }}" placeholder="user@blueorange.com" autocomplete="off" required/>
+                                    <input type="text" id="company_name" name="company_name" class="form-control @error('company_name') is-invalid @enderror" value="{{ old('company_name') }}" placeholder="{{ __('Company Name') }}" autocomplete="off" required/>
                                 </div>
                                 @error('company_name')
                                     <span class="invalid-feedback" role="alert">
@@ -103,9 +104,8 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
-                                <label for="super_admin_name" class="form-label">Company Super Admin Name <b class="text-danger">*</b></label>
                                 <div class="input-group input-group-merge">
-                                    <input type="text" id="super_admin_name" name="super_admin_name" class="form-control @error('super_admin_name') is-invalid @enderror" value="{{ old('super_admin_name') }}" placeholder="user@blueorange.com" autocomplete="off" required/>
+                                    <input type="text" id="super_admin_name" name="super_admin_name" class="form-control @error('super_admin_name') is-invalid @enderror" value="{{ old('super_admin_name') }}" placeholder="{{ __('Your Name') }}" autocomplete="off" required/>
                                 </div>
                                 @error('super_admin_name')
                                     <span class="invalid-feedback" role="alert">
@@ -114,9 +114,8 @@
                                 @enderror
                             </div>
                             <div class="mb-3">
-                                <label for="email" class="form-label">Super Admin Login Email <sup class="text-danger">*</sup></label>
                                 <div class="input-group input-group-merge">
-                                    <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" placeholder="user@blueorange.com" autocomplete="off" required/>
+                                    <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" placeholder="{{ __('Your Email Address') }}" autocomplete="off" required/>
                                 </div>
                                 @error('email')
                                     <span class="invalid-feedback" role="alert">
@@ -125,11 +124,8 @@
                                 @enderror
                             </div>
                             <div class="mb-3 form-password-toggle">
-                                <div class="d-flex justify-content-between">
-                                    <label class="form-label" for="password">Password <b class="text-danger">*</b></label>
-                                </div>
                                 <div class="input-group input-group-merge">
-                                    <input type="password" id="password" required autocomplete="off"  tabindex="0" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="********" aria-describedby="password" />
+                                    <input type="password" id="password" required autocomplete="off"  tabindex="0" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="{{ __('Password') }}" aria-describedby="password" />
                                     <span class="input-group-text cursor-pointer"><i class="ti ti-eye-off"></i></span>
 
                                     @error('password')
@@ -140,11 +136,8 @@
                                 </div>
                             </div>
                             <div class="mb-3 form-password-toggle">
-                                <div class="d-flex justify-content-between">
-                                    <label class="form-label" for="password_confirmation">Confirm Password <b class="text-danger">*</b></label>
-                                </div>
                                 <div class="input-group input-group-merge">
-                                    <input type="password" id="password_confirmation" required autocomplete="off"  tabindex="0" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" placeholder="********" aria-describedby="password_confirmation" />
+                                    <input type="password" id="password_confirmation" required autocomplete="off"  tabindex="0" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" placeholder="{{ __('Confirm Password') }}" aria-describedby="password_confirmation" />
                                     <span class="input-group-text cursor-pointer"><i class="ti ti-eye-off"></i></span>
 
                                     @error('password_confirmation')

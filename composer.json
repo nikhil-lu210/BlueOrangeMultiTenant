@@ -23,6 +23,7 @@
         "spatie/laravel-backup": "^9.0",
         "spatie/laravel-medialibrary": "^10.0.0",
         "spatie/laravel-permission": "^5.11",
+        "stancl/tenancy": "^3.9",
         "stevebauman/location": "^7.0",
         "stevebauman/purify": "^6.2",
         "vinkla/hashids": "11.0"
