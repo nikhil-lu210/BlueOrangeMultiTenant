@@ -22,15 +22,17 @@ class User extends Authenticatable implements HasMedia
 {
     use HasApiTokens, HasFactory, Notifiable, Authorizable, HasRoles, InteractsWithMedia, SoftDeletes, CascadeSoftDeletes, HasCustomRouteId;
 
-    // Relations 
+    // Relations
     use UserRelations;
 
     // Accessors & Mutators
     use UserAccessors, UserMutators;
-    
+
     protected $cascadeDeletes = [
         // 'employee',
     ];
+
+    protected $connection = 'mysql';
 
     protected $dates = [
         'created_at',
@@ -39,9 +41,9 @@ class User extends Authenticatable implements HasMedia
     ];
 
     protected $with = [
-        'roles', 
-        'employee', 
-        'media', 
+        'roles',
+        'employee',
+        'media',
         'shortcuts'
     ];
 

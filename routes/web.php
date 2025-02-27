@@ -28,9 +28,9 @@ Route::middleware(['web'])->group(function () {
 });
 
 
-/*==============================================================
-======================< Administration Routes >=================
-==============================================================*/
-Route::middleware(['auth', 'active_user'])->group(function () {
-    include_once 'administration/administration.php';
-});
+// /*==============================================================
+// ======================< Administration Routes >=================
+// ==============================================================*/
+// Route::middleware(['auth', 'active_user'])->group(function () {
+//     include_once 'administration/administration.php';
+// });
