@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Tenant\Tenant;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,10 @@ class TenantVerificationController extends Controller
             'super_admin_name' => $tenantRequest->super_admin_name,
             'email' => $tenantRequest->email,
             'password' => $tenantRequest->password,
+        ]);
+
+        $tenant->domains()->create([
+            'domain' => Str::slug($tenant->name). '.' .config('app.domain'),
         ]);
 
         return redirect()->route('login')->with('success', 'Your account has been verified. You can now log in.');
