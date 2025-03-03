@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             WeekendSeeder::class,
             SettingsSeeder::class,
-            
+
             PermissionsTableSeeder::class,
             RolesTableSeeder::class,
             UsersTableSeeder::class,

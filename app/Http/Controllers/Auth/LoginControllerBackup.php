@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
+use Illuminate\Support\Str;
+use Stancl\Tenancy\Tenancy;
 use Illuminate\Http\Request;
+use App\Models\Tenant\Tenant;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
-class LoginController extends Controller
+class LoginControllerBackup extends Controller
 {
     /*
     |--------------------------------------------------------------------------
@@ -29,8 +33,8 @@ class LoginController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = RouteServiceProvider::HOME;
-    // protected $redirectTo = '/dashboard';
+    // protected $redirectTo = RouteServiceProvider::HOME;
+    protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -39,7 +43,19 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-        // dd(User::all());
+        // Manually initialize tenant from the subdomain
+        $fullDomain = request()->getHost();
+        $subdomain = Str::before($fullDomain, '.');
+
+        $tenant = Tenant::whereHas('domains', function($query) use ($subdomain) {
+            $query->where('domain', $subdomain);
+        })->first();
+
+
+        if ($tenant) {
+            app(Tenancy::class)->initialize($tenant);
+        }
+
         $this->middleware('guest')->except('logout');
     }
 
@@ -84,6 +100,12 @@ class LoginController extends Controller
      */
     protected function attemptLogin(Request $request)
     {
+        // Ensure tenant is initialized
+        $tenant = tenant();
+        if (!$tenant) {
+            abort(404, 'Tenant not found');
+        }
+
         // Add status check here
         return $this->guard()->attempt(
             array_merge($this->credentials($request), ['status' => 'Active']),

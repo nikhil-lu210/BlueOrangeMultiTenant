@@ -20,8 +20,29 @@ use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
 Route::middleware([
     'web',
+    InitializeTenancyBySubdomain::class,  // Make sure this is first
+    PreventAccessFromCentralDomains::class,
+    'guest',  // Then add the guest middleware
+    'initialize_tenant',
+])->group(function () {
+    // Auth::routes();
+    /*==============================================================
+    ===========================< Auth Routes >======================
+    ==============================================================*/
+    include_once 'custom_auth/auth.php';
+
+    Route::get('/', function () {
+        dd('Tenant ID: ' . tenant('id')); // Debugging the tenant ID
+        return view('welcome');
+    })->name('homepage');
+});
+
+
+Route::middleware([
+    'web',
     'auth',
     'active_user',
+    'initialize_tenant',
     InitializeTenancyBySubdomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {

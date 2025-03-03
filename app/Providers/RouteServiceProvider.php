@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
+use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
         $this->mapApiRoutes();
+        $this->mapTenantRoutes();
     }
 
     /**
@@ -60,6 +63,17 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
         }
+    }
+
+    protected function mapTenantRoutes()
+    {
+        Route::middleware([
+            'web',
+            InitializeTenancyBySubdomain::class,
+            PreventAccessFromCentralDomains::class,
+        ])
+        ->namespace($this->namespace)
+        ->group(base_path('routes/tenant.php'));
     }
 
     protected function centralDomains(): array
