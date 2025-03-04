@@ -2,10 +2,11 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,16 +32,19 @@ class AppServiceProvider extends ServiceProvider
     {
         $host = Request::getHost();
 
-        // Extract the base domain dynamically (last two parts of the domain)
+        // Extract the host parts (split by '.')
         $hostParts = explode('.', $host);
         $count = count($hostParts);
 
         if ($count >= 3) {
-            // Has a subdomain, set session for the entire domain
+            // Subdomain detected (e.g., tenant1.blueorangemultitenant.localhost)
             $baseDomain = implode('.', array_slice($hostParts, -2));
-            Config::set('session.domain', '.' . $baseDomain);
+            Config::set('session.domain', '.' . $baseDomain); // Session is for the entire domain
+        } elseif ($count == 2) {
+            // Main domain detected (e.g., blueorangemultitenant.localhost)
+            Config::set('session.domain', null); // No subdomain, so no session sharing
         } else {
-            // No subdomain, set session only for this domain
+            // If no valid domain is detected, make sure session is not set globally
             Config::set('session.domain', null);
         }
     }
