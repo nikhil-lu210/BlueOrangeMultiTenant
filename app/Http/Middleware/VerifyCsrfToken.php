@@ -11,7 +11,24 @@ class VerifyCsrfToken extends Middleware
      *
      * @var array<int, string>
      */
-    protected $except = [
-        //
-    ];
+    protected $except = [];
+
+    /**
+     * Determine if the request has a URI that should pass through CSRF verification.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function inExceptArray($request)
+    {
+        $host = $request->getHost(); // Get the current domain
+        $centralDomain = config('tenancy.central_domains')[0] ?? env('APP_DOMAIN', 'blueorangemultitenant.localhost');
+
+        // If the request is from a central domain or a tenant subdomain, skip CSRF verification
+        if ($host === $centralDomain || strpos($host, '.blueorangemultitenant.localhost') !== false) {
+            return true; // Skip CSRF verification
+        }
+
+        return parent::inExceptArray($request);
+    }
 }
