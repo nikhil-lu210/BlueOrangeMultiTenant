@@ -25,7 +25,7 @@ class VerifyCsrfToken extends Middleware
         $centralDomain = config('tenancy.central_domains')[0] ?? env('APP_DOMAIN', 'blueorangemultitenant.localhost');
 
         // If the request is from a central domain or a tenant subdomain, skip CSRF verification
-        if ($host === $centralDomain || strpos($host, '.blueorangemultitenant.localhost') !== false) {
+        if ($host === $centralDomain || strpos($host, env('SESSION_DOMAIN', '.blueorangemultitenant.localhost')) !== false) {
             return true; // Skip CSRF verification
         }
 
