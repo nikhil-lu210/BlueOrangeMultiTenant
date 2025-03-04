@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 
 Route::middleware([
     'web',
+    'initialize_tenant'
 ])->group(function () {
 
     // Login Routes

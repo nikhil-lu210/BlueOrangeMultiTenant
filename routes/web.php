@@ -21,11 +21,11 @@ Route::get('/', function () {
     return view('welcome');
 })->name('homepage');
 
-Auth::routes();
+// Auth::routes();
 
-// // Registration Routes
-// Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-// Route::post('register', [RegisterController::class, 'register']);
+// Registration Routes
+Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('register', [RegisterController::class, 'register']);
 // // Email Verification Routes
 // Route::get('email/verify', [VerificationController::class, 'show'])->name('verification.notice');
 // Route::get('email/verify/{id}/{hash}', [VerificationController::class, 'verify'])->name('verification.verify');
