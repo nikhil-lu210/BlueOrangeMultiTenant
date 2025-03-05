@@ -269,7 +269,7 @@ class UserService
 
     public function generateQrCode(User $user)
     {
-        if ($user->hasMedia('qecode')) {
+        if ($user->hasMedia('qrcode')) {
             toast('User Has Already QR Code.', 'warning');
             return redirect()->back();
         }
@@ -282,16 +282,27 @@ class UserService
                 ->margin(10)
                 ->build();
         $qrCodePath = 'qrcodes/' . $user->userid . '.png';
-        Storage::disk('public')->put($qrCodePath, $qrCode->getString());
+
+        // Check if tenancy is initialized and use tenant-specific storage path
+        if (tenancy()->initialized) {
+            // Tenant-based storage path
+            $tenantFolder = 'tenant' . tenant()->id; // Get tenant folder (e.g., tenant1)
+            Storage::disk('public')->put($tenantFolder . '/' . $qrCodePath, $qrCode->getString()); // Store QR code in tenant's folder
+            $fullPath = Storage::disk('public')->path($tenantFolder . '/' . $qrCodePath);
+        } else {
+            // Default storage path (non-tenant environment)
+            Storage::disk('public')->put($qrCodePath, $qrCode->getString()); // Store QR code in public folder
+            $fullPath = storage_path('app/public/' . $qrCodePath);
+        }
 
         // Save the QR code file as a media item
-        // Update the path from App\Services\MediaLibrary\PathGenerators\UserPathGenerator
-        $user->addMedia(storage_path('app/public/' . $qrCodePath))
-             ->toMediaCollection('qrcode');
+        $user->addMedia($fullPath)
+            ->toMediaCollection('qrcode');
 
         toast('QR Code Generated Successfully.', 'success');
         return redirect()->back();
     }
+
 
     public function generateBarCode(User $user)
     {
