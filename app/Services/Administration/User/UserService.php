@@ -305,11 +305,20 @@ class UserService
         $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128); // Generates CODE 128 barcode
         $barcodePath = 'barcodes/' . $user->userid . '.png';
 
-        // Save the barcode to storage
-        Storage::disk('public')->put($barcodePath, $barcodeData);
+        // Check if tenancy is initialized and use tenant-specific storage path
+        if (tenancy()->initialized) {
+            // Tenant-based storage path
+            $tenantFolder = 'tenant' . tenant()->id; // Get tenant folder (e.g., tenant1)
+            Storage::disk('public')->put($tenantFolder . '/' . $barcodePath, $barcodeData); // Store barcode in tenant's folder
+            $fullPath = Storage::disk('public')->path($tenantFolder . '/' . $barcodePath);
+        } else {
+            // Default storage path (non-tenant environment)
+            Storage::disk('public')->put($barcodePath, $barcodeData); // Store barcode in public folder
+            $fullPath = storage_path('app/public/' . $barcodePath);
+        }
 
         // Save the barcode file as a media item
-        $user->addMedia(storage_path('app/public/' . $barcodePath))
+        $user->addMedia($fullPath)
             ->toMediaCollection('barcode');
 
         toast('Barcode generated successfully.', 'success');
