@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
-use Log;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 
@@ -49,13 +46,6 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-        // // Log database info here after tenant has been initialized
-        // Log::info('Current Database From showLoginForm:', [
-        //     'database' => DB::connection()->getDatabaseName(),
-        //     'host-url' => request()->getHost(),
-        //     'users' => User::all()
-        // ]);
-
         return view('auth.login'); // Or wherever your login form is rendered
     }
 
@@ -96,66 +86,29 @@ class LoginController extends Controller
     }
 
     /**
-     * Override the attemptLogin method to check for active status
-     */
-    protected function attemptLogin(Request $request)
-    {
-        $user = User::where('email', $request->input('email'))->first();
-
-        // Log::info('User status during login attempt:', [
-        //     'email' => $request->input('email'),
-        //     'status' => $user ? $user->status : null
-        // ]);
-
-        $loginAttempt = $this->guard()->attempt(
-            array_merge($this->credentials($request), ['status' => 'Active']),
-            $request->filled('remember')
-        );
-
-        // Log::info('Login attempt result:', ['success' => $loginAttempt]);
-
-        if ($loginAttempt) {
-            auth()->login($user, true);
-            // Log::info('User manually logged in:', ['email' => $user->email]);
-        }
-
-        // Log session data after login
-        // Log::info('Session Data After Login:', session()->all());
-
-        return $loginAttempt;
-    }
-
-
-
-    /**
-     * The user has been authenticated.
+     * Log the user out of the application.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  mixed  $user
-     * @return mixed
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    protected function authenticated(Request $request, $user)
+    public function logout(Request $request)
     {
-        // Log::info('User authenticated:', [
-        //     'id' => $user->id,
-        //     'email' => $user->email
-        // ]);
+        // dd($request->all());
+        $this->guard()->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        if ($response = $this->loggedOut($request)) {
+            return $response;
+        }
+
+        return $request->wantsJson()
+            ? new JsonResponse([], 204)
+            : redirect('/login');
     }
 
-    // public function logout(Request $request)
-    // {
-    //     dd($request);
-    //     Log::info('User Logging Out:', ['id' => auth()->id()]);
-
-    //     Auth::guard('web')->logout();
-    //     Session::flush();
-    //     $request->session()->invalidate();
-    //     $request->session()->regenerateToken();
-
-    //     Log::info('Session after logout:', session()->all());
-
-    //     return redirect('/login');
-    // }
 
 
     protected function sendFailedLoginResponse(Request $request)

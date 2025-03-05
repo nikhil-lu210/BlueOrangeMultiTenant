@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\LoginController;
 use Stancl\Tenancy\Middleware\InitializeTenancyBySubdomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -22,6 +23,14 @@ Route::middleware([
     'web',
     InitializeTenancyBySubdomain::class,  // Make sure this is first
     PreventAccessFromCentralDomains::class,
+])->group(function () {
+    Route::post('logout', [LoginController::class, 'logout'])->name('logout');
+});
+
+Route::middleware([
+    'web',
+    InitializeTenancyBySubdomain::class,  // Make sure this is first
+    PreventAccessFromCentralDomains::class,
     'guest',  // Then add the guest middleware
     'initialize_tenant',
 ])->group(function () {
@@ -32,7 +41,7 @@ Route::middleware([
     include_once 'custom_auth/auth.php';
 
     Route::get('/', function () {
-        dd('Tenant ID: ' . tenant('id')); // Debugging the tenant ID
+        // dd('Tenant ID: ' . tenant('id')); // Debugging the tenant ID
         return view('welcome');
     })->name('homepage');
 });
