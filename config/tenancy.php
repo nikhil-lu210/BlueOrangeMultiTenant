@@ -112,11 +112,11 @@ return [
          *
          * See https://tenancyforlaravel.com/docs/v3/tenancy-bootstrappers/#filesystem-tenancy-boostrapper
          */
-        'root_override' => [
-            // Disks whose roots should be overridden after storage_path() is suffixed.
-            'local' => '%storage_path%/app/',
-            'public' => '%storage_path%/app/public/',
-        ],
+        // 'root_override' => [
+        //     // Disks whose roots should be overridden after storage_path() is suffixed.
+        //     'local' => '%storage_path%/app/',
+        //     'public' => '%storage_path%/app/public/',
+        // ],
 
         /**
          * Should storage_path() be suffixed.
