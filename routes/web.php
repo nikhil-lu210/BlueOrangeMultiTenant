@@ -17,10 +17,6 @@ use App\Http\Controllers\Tenant\TenantVerificationController;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('homepage');
-
 // Auth::routes();
 
 // Registration Routes
@@ -43,12 +39,7 @@ Route::get('/verification/mail/sent', function () {
 ==============================================================*/
 Route::middleware(['web'])->group(function () {
     include_once 'application/application.php';
+
+    // Website
+    include_once 'website/website.php';
 });
-
-
-// /*==============================================================
-// ======================< Administration Routes >=================
-// ==============================================================*/
-// Route::middleware(['auth', 'active_user'])->group(function () {
-//     include_once 'administration/administration.php';
-// });

@@ -42,8 +42,8 @@ Route::middleware([
 
     Route::get('/', function () {
         // dd('Tenant ID: ' . tenant('id')); // Debugging the tenant ID
-        return view('welcome');
-    })->name('homepage');
+        return redirect()->route('website.homepage.index');
+    });
 });
 
 

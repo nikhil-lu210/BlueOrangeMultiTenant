@@ -25,7 +25,9 @@
                 </button>
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link fw-medium" aria-current="page" href="#">{{ __('Home') }}</a>
+                        <a class="nav-link fw-{{ request()->routeIs('website.homepage.index') ? 'bold text-primary' : 'medium' }}" aria-current="page" href="{{ route('website.homepage.index') }}">
+                            {{ __('Home') }}
+                        </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link fw-medium" href="#">{{ __('About Us') }}</a>
