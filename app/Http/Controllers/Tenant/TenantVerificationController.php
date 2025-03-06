@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Tenant;
 
 use Exception;
+use App\Models\User;
 use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use App\Models\Tenant\Tenant;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\TenantRequest;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Artisan;
 
@@ -74,6 +73,9 @@ class TenantVerificationController extends Controller
             // Run seeders on the correct tenant database
             Artisan::call('db:seed', ['--database' => 'mysql_tenant', '--force' => true]);
 
+            // Create first tenant
+            $this->createFirstSuperAdminUser($tenant);
+
             // Dynamically generate the subdomain URL
             $subdomain = $tenant->domains()->first()->domain;
             $url = 'https://' . $subdomain . '.' . config('app.domain'). '/login';
@@ -100,5 +102,59 @@ class TenantVerificationController extends Controller
             // Correct way to create the database
             $pdo->exec("CREATE DATABASE `$databaseName` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
         }
+    }
+
+
+    /**
+     * Create first user on tenant
+     */
+    private function createFirstSuperAdminUser(Tenant $tenant)
+    {
+        // Create a superAdmin
+        $superAdmin = User::create([
+            'userid' => date('Ymd'),
+            'first_name' => 'Super',
+            'last_name' => 'Admin',
+            'name' => $tenant->super_admin_name,
+            'email' => $tenant->email,
+            'password' => $tenant->password,
+            'email_verified_at' => now(),
+            'remember_token' => Str::random(10),
+        ]);
+
+        // Assign a role to the superAdmin
+        $superAdminRole = Role::findByName('Super Admin');
+        $superAdmin->assignRole($superAdminRole);
+        // Assign team_leader
+        $superAdmin->employee_team_leaders()->attach($superAdmin->id, ['is_active' => true]);
+        // Attach the interaction for this superAdmin
+        $superAdmin->interacted_users()->attach($superAdmin->id);
+        // Create associated EmployeeShift
+        $superAdmin->employee_shifts()->create([
+            'start_time' => '14:00:00',
+            'end_time' => '22:00:00',
+            'total_time' => '08:00:00',
+            'implemented_from' => date('Y-m-d'),
+        ]);
+        // Create associated Leave
+        $superAdmin->leave_alloweds()->create([
+            'earned_leave' => '120:00:00',
+            'casual_leave' => '120:00:00',
+            'sick_leave' => '120:00:00',
+            'implemented_from' => '01-01',
+            'implemented_to' => '12-31',
+        ]);
+        // Create associated employee for the superAdmin
+        $superAdmin->employee()->create([
+            'joining_date' => date('Y-m-d'),
+            'alias_name' => 'Controller',
+            'father_name' => fake()->name('male'),
+            'mother_name' => fake()->name('female'),
+            'birth_date' => fake()->dateTimeBetween('-30 years', '-20 years')->format('Y-m-d'),
+            'personal_email' => fake()->unique()->safeEmail,
+            'official_email' => fake()->email(),
+            'personal_contact_no' => fake()->phoneNumber(),
+            'official_contact_no' => fake()->unique()->phoneNumber(),
+        ]);
     }
 }
