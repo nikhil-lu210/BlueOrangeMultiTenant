@@ -68,7 +68,7 @@
                         <p class="text-center mb-4">
                             Account activation link sent to your email address. Please check your email and veify your account.
                         </p>
-                        <a class="btn btn-primary w-100 mb-3" href="{{ route('homepage') }}">Go To Homepage</a>
+                        <a class="btn btn-primary w-100 mb-3" href="{{ route('website.homepage.index') }}">Go To Homepage</a>
                         {{-- <p class="text-center mb-0">
                             Didn't get the mail?
                             <a href="javascript:void(0);"> Resend </a>
