@@ -22,7 +22,7 @@ class TenantRegistrationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => ['required', 'string', 'max:255'],
+            'company_name' => ['required', 'string', 'max:255', 'unique:tenant_requests,name'],
             'super_admin_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:tenants,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],

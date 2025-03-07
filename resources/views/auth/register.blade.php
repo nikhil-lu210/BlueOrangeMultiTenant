@@ -97,6 +97,7 @@
                                 <div class="input-group input-group-merge">
                                     <input type="text" id="company_name" name="company_name" class="form-control @error('company_name') is-invalid @enderror" value="{{ old('company_name') }}" placeholder="{{ __('Company Name') }}" autocomplete="off" required/>
                                 </div>
+                                <small class="text-muted"><b>Note:</b> Company Name Should Be Unique.</small>
                                 @error('company_name')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>

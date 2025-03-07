@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tenant_requests', function (Blueprint $table) {
             $table->id();
 
-            $table->string('name');
+            $table->string('name')->unique();
             $table->string('super_admin_name');
             $table->string('email')->unique();
             $table->string('password');
