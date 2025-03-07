@@ -25,6 +25,16 @@ class UserService
 {
     public function getUserListingData($request)
     {
+        $userIds = auth()->user()->user_interactions->pluck('id');
+
+
+        $teamLeaders = User::whereIn('id', $userIds)
+                            ->whereStatus('Active')
+                            ->get()
+                            ->filter(function ($user) {
+                                return $user->hasAnyPermission(['Daily Work Update Everything', 'Daily Work Update Update']);
+                            });
+
         $roles = $this->getAllRoles();
 
         $query = User::select(['id', 'userid', 'first_name', 'last_name', 'name', 'email', 'status'])
@@ -33,12 +43,33 @@ class UserService
         // Check if the authenticated user has 'User Everything' or 'User Create' permission
         if (!auth()->user()->hasAnyPermission(['User Everything', 'User Create', 'User Update', 'User Delete'])) {
             // Restrict to users based on user interactions
-            $query->whereIn('id', auth()->user()->user_interactions->pluck('id'));
+            $query->whereIn('id', $userIds);
+        }
+
+        // If a team leader ID is provided, filter employees under them
+        if ($request->team_leader_id) {
+            $teamLeader = User::find($request->team_leader_id);
+            if ($teamLeader) {
+                $employeeIds = $teamLeader->tl_employees->pluck('id');
+                $query->whereIn('id', $employeeIds);
+            }
         }
 
         // Apply role filter if provided
         if ($request->filled('role_id')) {
             $query->whereHas('roles', fn($role) => $role->where('roles.id', $request->role_id));
+        }
+
+        // Apply shift filter
+        if ($request->filled('start_time') && $request->filled('end_time')) {
+            $startTime = $request->input('start_time').':00';
+            $endTime = $request->input('end_time').':00';
+
+            $query->whereHas('employee_shifts', function ($shiftQuery) use ($startTime, $endTime) {
+                $shiftQuery->where('status', 'Active')
+                    ->whereTime('start_time', '=', $startTime)
+                    ->whereTime('end_time', '=', $endTime);
+            });
         }
 
         // Apply status filter
@@ -53,7 +84,7 @@ class UserService
 
         $users = $query->get();
 
-        return compact('roles', 'users');
+        return compact('teamLeaders', 'roles', 'users');
     }
 
     public function getAllRoles()
@@ -269,7 +300,7 @@ class UserService
 
     public function generateQrCode(User $user)
     {
-        if ($user->hasMedia('qrcode')) {
+        if ($user->hasMedia('qecode')) {
             toast('User Has Already QR Code.', 'warning');
             return redirect()->back();
         }
@@ -282,27 +313,16 @@ class UserService
                 ->margin(10)
                 ->build();
         $qrCodePath = 'qrcodes/' . $user->userid . '.png';
-
-        // Check if tenancy is initialized and use tenant-specific storage path
-        if (tenancy()->initialized) {
-            // Tenant-based storage path
-            $tenantFolder = 'tenant' . tenant()->id; // Get tenant folder (e.g., tenant1)
-            Storage::disk('public')->put($tenantFolder . '/' . $qrCodePath, $qrCode->getString()); // Store QR code in tenant's folder
-            $fullPath = Storage::disk('public')->path($tenantFolder . '/' . $qrCodePath);
-        } else {
-            // Default storage path (non-tenant environment)
-            Storage::disk('public')->put($qrCodePath, $qrCode->getString()); // Store QR code in public folder
-            $fullPath = storage_path('app/public/' . $qrCodePath);
-        }
+        Storage::disk('public')->put($qrCodePath, $qrCode->getString());
 
         // Save the QR code file as a media item
-        $user->addMedia($fullPath)
-            ->toMediaCollection('qrcode');
+        // Update the path from App\Services\MediaLibrary\PathGenerators\UserPathGenerator
+        $user->addMedia(storage_path('app/public/' . $qrCodePath))
+             ->toMediaCollection('qrcode');
 
         toast('QR Code Generated Successfully.', 'success');
         return redirect()->back();
     }
-
 
     public function generateBarCode(User $user)
     {
@@ -316,20 +336,11 @@ class UserService
         $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128); // Generates CODE 128 barcode
         $barcodePath = 'barcodes/' . $user->userid . '.png';
 
-        // Check if tenancy is initialized and use tenant-specific storage path
-        if (tenancy()->initialized) {
-            // Tenant-based storage path
-            $tenantFolder = 'tenant' . tenant()->id; // Get tenant folder (e.g., tenant1)
-            Storage::disk('public')->put($tenantFolder . '/' . $barcodePath, $barcodeData); // Store barcode in tenant's folder
-            $fullPath = Storage::disk('public')->path($tenantFolder . '/' . $barcodePath);
-        } else {
-            // Default storage path (non-tenant environment)
-            Storage::disk('public')->put($barcodePath, $barcodeData); // Store barcode in public folder
-            $fullPath = storage_path('app/public/' . $barcodePath);
-        }
+        // Save the barcode to storage
+        Storage::disk('public')->put($barcodePath, $barcodeData);
 
         // Save the barcode file as a media item
-        $user->addMedia($fullPath)
+        $user->addMedia(storage_path('app/public/' . $barcodePath))
             ->toMediaCollection('barcode');
 
         toast('Barcode generated successfully.', 'success');
