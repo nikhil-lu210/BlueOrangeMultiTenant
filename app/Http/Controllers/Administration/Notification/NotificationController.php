@@ -84,11 +84,12 @@ class NotificationController extends Controller
      */
     public function getUnreadNotificationsForBrowser()
     {
+        // dd('hi', auth()->id(), auth()->user()->unreadNotifications()->get(), auth()->user()->unreadNotifications);
         // Check if the unread notifications are already cached
-        $notifications = Cache::remember('unread_notifications_' . auth()->id(), 5, function () {
-            // If not cached, fetch the notifications from the database
+        // $notifications = Cache::remember('unread_notifications_' . auth()->id(), now()->addMinutes(5), function () {
             return auth()->user()->unreadNotifications;
-        });
+        // });
+
         // dd($notifications);
 
         // Return the cached notifications as JSON

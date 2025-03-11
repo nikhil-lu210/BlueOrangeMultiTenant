@@ -53,5 +53,5 @@ $(document).ready(function () {
         localStorage.setItem("shownNotifications", JSON.stringify(updatedNotifications));
     }
 
-    setInterval(fetchNotifications, 60000);
+    setInterval(fetchNotifications, 30000);
 });
