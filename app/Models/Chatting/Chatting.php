@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Chatting extends Model
 {
     use HasFactory, SoftDeletes, CascadeSoftDeletes, Relations, HasCustomRouteId;
-    
+
     protected $cascadeDeletes = [];
 
     protected $fillable = [
@@ -23,7 +23,7 @@ class Chatting extends Model
         'file',
         'seen_at'
     ];
-    
+
     protected $casts = [
         'message' => PurifyHtmlOnGet::class,
         'seen_at' => 'datetime',

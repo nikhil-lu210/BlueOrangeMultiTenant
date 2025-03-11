@@ -22,7 +22,7 @@ class TenantVerificationController extends Controller
      */
     public function __construct()
     {
-        config(['database.default' => env('DB_CONNECTION', 'mysql')]);
+        config(['database.default' => env('DB_CONNECTION_LANDLORD', 'mysql_landlord')]);
     }
 
     public function verify(string $token) {

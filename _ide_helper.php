@@ -20685,6 +20685,30 @@ namespace Illuminate\View {
             }
     }
 
+namespace Stancl\Tenancy\Database {
+            /**
+     * 
+     *
+     * @property Tenant[] $items
+     * @method void __construct(Tenant[] $items = [])
+     * @method Tenant[] toArray()
+     * @method Tenant offsetGet($key)
+     * @method Tenant first()
+     */        class TenantCollection {
+            }
+    }
+
+namespace Illuminate\Database\Eloquent {
+            /**
+     * 
+     *
+     * @template TKey of array-key
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     * @extends \Illuminate\Support\Collection<TKey, TModel>
+     */        class Collection {
+            }
+    }
+
 
 namespace  {
             class App extends \Illuminate\Support\Facades\App {}

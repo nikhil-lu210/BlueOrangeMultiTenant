@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Str;
+use App\Models\Tenant\Tenant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
@@ -26,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
 
         $this->setSessionDomain();
+
+        $this->setTenantConnection();
     }
 
     protected function setSessionDomain()
@@ -46,6 +51,39 @@ class AppServiceProvider extends ServiceProvider
         } else {
             // If no valid domain is detected, make sure session is not set globally
             Config::set('session.domain', null);
+        }
+    }
+
+    /**
+     * Set the tenant database connection based on subdomain.
+     *
+     * @return void
+     */
+    private function setTenantConnection()
+    {
+        // Get the subdomain
+        $fullDomain = request()->getHost();
+        $subdomain = Str::before($fullDomain, '.');
+
+        // Try to find a tenant based on the subdomain
+        $tenant = Tenant::whereHas('domains', function ($query) use ($subdomain) {
+            $query->where('domain', $subdomain);
+        })->first();
+
+        if ($tenant) {
+            // Initialize the tenant using its database connection
+            $tenantDatabase = $tenant->tenancy_db_name;
+
+            // Dynamically set the tenant database connection
+            Config::set('database.connections.mysql_tenant.database', $tenantDatabase);
+
+            // Ensure the database connection is refreshed for the tenant's database
+            DB::purge('mysql_tenant');
+            DB::reconnect('mysql_tenant');
+            DB::setDefaultConnection('mysql_tenant');
+        } else {
+            // Fallback to the landlord connection if no tenant is found
+            config(['database.default' => 'mysql_landlord']);
         }
     }
 }

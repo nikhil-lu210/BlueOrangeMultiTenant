@@ -29,7 +29,6 @@ class InitializeTenant
         })->first();
 
         if ($tenant) {
-            // dd($tenant);
             // Initialize the tenant using Stancl Tenancy package
             app(Tenancy::class)->initialize($tenant);
 
@@ -43,7 +42,7 @@ class InitializeTenant
             DB::setDefaultConnection('mysql_tenant');
         } else {
             // No tenant found, fallback to landlord DB connection
-            config(['database.default' => env('DB_CONNECTION', 'mysql')]);
+            config(['database.default' => 'mysql_landlord']);  // Explicitly set landlord connection as default
         }
 
         return $next($request);

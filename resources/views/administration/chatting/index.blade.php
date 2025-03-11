@@ -102,6 +102,38 @@
 @section('custom_script')
     {{--  External Custom Javascript  --}}
     <script>
-        // Custom Script Here
+        // $(document).ready(function () {
+        //     function fetchNewMessages() {
+        //         $.get("{{ route('administration.chatting.browser.fetch_unread') }}", function (data) {
+        //             if (data) {
+        //                 console.log("New message received:", data);
+
+        //                 // Check if browser notifications are allowed
+        //                 if (Notification.permission === "granted") {
+        //                     let notif = new Notification("New Message from User " + data.sender_id, {
+        //                         body: data.message,
+        //                         icon: "https://cdn-icons-png.flaticon.com/512/1827/1827301.png"
+        //                     });
+
+        //                     notif.onclick = function () {
+        //                         window.open("/chat/" + data.sender_id, "_blank");
+        //                     };
+        //                 } else {
+        //                     Notification.requestPermission();
+        //                 }
+        //             }
+        //         }).fail(function (err) {
+        //             console.error("Error fetching new messages:", err);
+        //         });
+        //     }
+
+        //     // Request notification permission when the page loads
+        //     if (Notification.permission !== "granted") {
+        //         Notification.requestPermission();
+        //     }
+
+        //     // Check for new messages every 10 seconds
+        //     setInterval(fetchNewMessages, 10000);
+        // });
     </script>
 @endsection

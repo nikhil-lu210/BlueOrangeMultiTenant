@@ -40,7 +40,7 @@ return [
      * Database tenancy config. Used by DatabaseTenancyBootstrapper.
      */
     'database' => [
-        'central_connection' => env('DB_CONNECTION', 'central'),
+        'central_connection' => env('DB_CONNECTION_LANDLORD', 'mysql_landlord'),
 
         /**
          * Connection used as a "template" for the dynamically created tenant database connection.
