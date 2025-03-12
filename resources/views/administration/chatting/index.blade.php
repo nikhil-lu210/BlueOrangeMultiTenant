@@ -102,38 +102,46 @@
 @section('custom_script')
     {{--  External Custom Javascript  --}}
     <script>
-        // $(document).ready(function () {
-        //     function fetchNewMessages() {
-        //         $.get("{{ route('administration.chatting.browser.fetch_unread') }}", function (data) {
-        //             if (data) {
-        //                 console.log("New message received:", data);
+        $(document).ready(function () {
+            function fetchNewMessages() {
+                $.get("{{ route('administration.chatting.browser.fetch_unread') }}", function (data) {
+                    if (data && Array.isArray(data)) { // Ensure data is an array
+                        let newMessageNotification = JSON.parse(localStorage.getItem("newMessageNotification")) || [];
 
-        //                 // Check if browser notifications are allowed
-        //                 if (Notification.permission === "granted") {
-        //                     let notif = new Notification("New Message from User " + data.sender_id, {
-        //                         body: data.message,
-        //                         icon: "https://cdn-icons-png.flaticon.com/512/1827/1827301.png"
-        //                     });
+                        data.forEach(message => {
+                            if (!newMessageNotification.includes(message.id)) {
+                                // Check if browser notifications are allowed
+                                if (Notification.permission === "granted") {
+                                    let notif = new Notification("New Message from User " + message.sender_id, {
+                                        body: message.message,
+                                        icon: "https://cdn-icons-png.flaticon.com/512/1827/1827301.png"
+                                    });
 
-        //                     notif.onclick = function () {
-        //                         window.open("/chat/" + data.sender_id, "_blank");
-        //                     };
-        //                 } else {
-        //                     Notification.requestPermission();
-        //                 }
-        //             }
-        //         }).fail(function (err) {
-        //             console.error("Error fetching new messages:", err);
-        //         });
-        //     }
+                                    notif.onclick = function () {
+                                        window.open("/chat/" + message.sender_id, "_blank");
+                                    };
 
-        //     // Request notification permission when the page loads
-        //     if (Notification.permission !== "granted") {
-        //         Notification.requestPermission();
-        //     }
+                                    // Mark this message as notified
+                                    newMessageNotification.push(message.id);
+                                    localStorage.setItem("newMessageNotification", JSON.stringify(newMessageNotification));
+                                } else if (Notification.permission !== "denied") {
+                                    Notification.requestPermission();
+                                }
+                            }
+                        });
+                    }
+                }).fail(function (err) {
+                    console.error("Error fetching new messages:", err);
+                });
+            }
 
-        //     // Check for new messages every 10 seconds
-        //     setInterval(fetchNewMessages, 10000);
-        // });
+            // Request notification permission when the page loads (only if not denied)
+            if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                Notification.requestPermission();
+            }
+
+            // Check for new messages every 30 seconds
+            setInterval(fetchNewMessages, 30000);
+        });
     </script>
 @endsection
