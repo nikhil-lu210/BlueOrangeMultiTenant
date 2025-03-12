@@ -61,14 +61,16 @@ class ChattingController extends Controller
     {
         $userId = auth()->id();
 
-        // Fetch the latest unread message for the logged-in user
-        $newMessage = Chatting::where('receiver_id', $userId)
+        // Fetch unread messages along with sender information
+        $unreadMessages = Chatting::where('receiver_id', $userId)
             ->whereNull('seen_at')
             ->orderBy('created_at', 'desc')
-            ->first();
+            ->with('sender.employee') // Eager load sender
+            ->get();
 
-        return response()->json($newMessage);
+        return response()->json($unreadMessages);
     }
+
 
 
     /**
