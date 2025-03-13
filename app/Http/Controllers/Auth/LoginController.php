@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Validation\ValidationException;
@@ -29,8 +30,8 @@ class LoginController extends Controller
      *
      * @var string
      */
-    // protected $redirectTo = RouteServiceProvider::HOME;
-    protected $redirectTo = '/dashboard';
+    protected $redirectTo = RouteServiceProvider::HOME;
+    // protected $redirectTo = '/dashboard';
 
     /**
      * Create a new controller instance.
@@ -39,7 +40,13 @@ class LoginController extends Controller
      */
     public function __construct()
     {
+        $this->middleware('initialize_tenant');
         $this->middleware('guest')->except('logout');
+    }
+
+    public function showLoginForm()
+    {
+        return view('auth.login'); // Or wherever your login form is rendered
     }
 
     /**
@@ -79,16 +86,30 @@ class LoginController extends Controller
     }
 
     /**
-     * Override the attemptLogin method to check for active status
+     * Log the user out of the application.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    protected function attemptLogin(Request $request)
+    public function logout(Request $request)
     {
-        // Add status check here
-        return $this->guard()->attempt(
-            array_merge($this->credentials($request), ['status' => 'Active']),
-            $request->filled('remember')
-        );
+        // dd($request->all());
+        $this->guard()->logout();
+
+        $request->session()->invalidate();
+
+        $request->session()->regenerateToken();
+
+        if ($response = $this->loggedOut($request)) {
+            return $response;
+        }
+
+        return $request->wantsJson()
+            ? new JsonResponse([], 204)
+            : redirect('/login');
     }
+
+
 
     protected function sendFailedLoginResponse(Request $request)
     {

@@ -27,7 +27,7 @@ class ChatBody extends Component
             toast('You are not authorised to interact with '.$this->receiver->name.'.','warning');
             return redirect()->route('administration.chatting.index');
         }
-        
+
         if ($this->receiver) {
             $this->messages = Chatting::with(['sender.media', 'receiver.media', 'task'])->where(function ($query) {
                     $query->where('sender_id', auth()->user()->id)

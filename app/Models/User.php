@@ -22,12 +22,12 @@ class User extends Authenticatable implements HasMedia
 {
     use HasApiTokens, HasFactory, Notifiable, Authorizable, HasRoles, InteractsWithMedia, SoftDeletes, CascadeSoftDeletes, HasCustomRouteId;
 
-    // Relations 
+    // Relations
     use UserRelations;
 
     // Accessors & Mutators
     use UserAccessors, UserMutators;
-    
+
     protected $cascadeDeletes = [
         // 'employee',
     ];
@@ -39,9 +39,9 @@ class User extends Authenticatable implements HasMedia
     ];
 
     protected $with = [
-        'roles', 
-        'employee', 
-        'media', 
+        'roles',
+        'employee',
+        'media',
         'shortcuts'
     ];
 
@@ -95,6 +95,31 @@ class User extends Authenticatable implements HasMedia
             $user->userid = 'UID' . $user->userid;
         });
     }
+
+
+    public function getFirstMediaUrl($collectionName, $conversionName = '')
+    {
+        $media = $this->getFirstMedia($collectionName);
+
+        if (!$media) {
+            return asset('assets/img/avatars/no_image.png'); // Default image if no media
+        }
+
+        // Get tenant prefix if tenancy is initialized
+        $tenantPrefix = tenancy()->initialized ? "tenant" . tenant()->id . '/' : '';
+
+        // Get the full URL for the media conversion
+        $mediaUrl = $media->getUrl($conversionName);
+
+        // Strip the base domain and the '/storage' part from the URL (if it exists)
+        $relativePath = str_replace('storage/', '', parse_url($mediaUrl, PHP_URL_PATH));
+
+        // Combine with the tenant prefix
+        $finalUrl = asset("storage/{$tenantPrefix}{$relativePath}");
+
+        return $finalUrl;
+    }
+
 
     /**
      * Register media collections for this model.

@@ -25,6 +25,16 @@ class UserService
 {
     public function getUserListingData($request)
     {
+        $userIds = auth()->user()->user_interactions->pluck('id');
+
+
+        $teamLeaders = User::whereIn('id', $userIds)
+                            ->whereStatus('Active')
+                            ->get()
+                            ->filter(function ($user) {
+                                return $user->hasAnyPermission(['Daily Work Update Everything', 'Daily Work Update Update']);
+                            });
+
         $roles = $this->getAllRoles();
 
         $query = User::select(['id', 'userid', 'first_name', 'last_name', 'name', 'email', 'status'])
@@ -33,12 +43,33 @@ class UserService
         // Check if the authenticated user has 'User Everything' or 'User Create' permission
         if (!auth()->user()->hasAnyPermission(['User Everything', 'User Create', 'User Update', 'User Delete'])) {
             // Restrict to users based on user interactions
-            $query->whereIn('id', auth()->user()->user_interactions->pluck('id'));
+            $query->whereIn('id', $userIds);
+        }
+
+        // If a team leader ID is provided, filter employees under them
+        if ($request->team_leader_id) {
+            $teamLeader = User::find($request->team_leader_id);
+            if ($teamLeader) {
+                $employeeIds = $teamLeader->tl_employees->pluck('id');
+                $query->whereIn('id', $employeeIds);
+            }
         }
 
         // Apply role filter if provided
         if ($request->filled('role_id')) {
             $query->whereHas('roles', fn($role) => $role->where('roles.id', $request->role_id));
+        }
+
+        // Apply shift filter
+        if ($request->filled('start_time') && $request->filled('end_time')) {
+            $startTime = $request->input('start_time').':00';
+            $endTime = $request->input('end_time').':00';
+
+            $query->whereHas('employee_shifts', function ($shiftQuery) use ($startTime, $endTime) {
+                $shiftQuery->where('status', 'Active')
+                    ->whereTime('start_time', '=', $startTime)
+                    ->whereTime('end_time', '=', $endTime);
+            });
         }
 
         // Apply status filter
@@ -53,7 +84,7 @@ class UserService
 
         $users = $query->get();
 
-        return compact('roles', 'users');
+        return compact('teamLeaders', 'roles', 'users');
     }
 
     public function getAllRoles()
@@ -106,7 +137,7 @@ class UserService
         $notifiableUsers = User::whereStatus('Active')->get()->filter(function ($user) {
             return $user->hasAnyPermission(['User Everything', 'User Update']);
         });
-            
+
         foreach ($notifiableUsers as $key => $notifiableUser) {
             $notifiableUser->notify(new NewUserRegistrationNotification($user, $authUser));
         }
@@ -142,7 +173,7 @@ class UserService
         return User::with(['roles', 'media'])->findOrFail($user->id);
     }
 
-    
+
     public function updateUser(User $user, array $data)
     {
         return DB::transaction(function () use ($user, $data) {
@@ -177,7 +208,7 @@ class UserService
 
             // Handle avatar update
             $this->attachAvatar($user, $data['avatar'] ?? null);
-            
+
             // Sync roles
             $user->syncRoles([$data['role_id']]);
         });
@@ -186,17 +217,17 @@ class UserService
 
     public function updateShift(EmployeeShift $shift, User $user, array $data) {
         return DB::transaction(function() use ($data, $shift, $user) {
-            $shift->update([
-                'implemented_to' => date('Y-m-d'),
-                'status' => 'Inactive'
-            ]);
-
             EmployeeShift::create([
                 'user_id' => $user->id,
                 'start_time' => $data['start_time'],
                 'end_time' => $data['end_time'],
                 'total_time' => get_total_time_hh_mm_ss($data['start_time'], $data['end_time']),
                 'implemented_from' => date('Y-m-d')
+            ]);
+
+            $shift->update([
+                'implemented_to' => date('Y-m-d'),
+                'status' => 'Inactive'
             ]);
         }, 5);
     }
@@ -244,7 +275,7 @@ class UserService
         ]);
     }
 
-    
+
     private function attachAvatar(User $user, $avatar = null)
     {
         if ($avatar instanceof UploadedFile) {
@@ -269,27 +300,23 @@ class UserService
 
     public function generateQrCode(User $user)
     {
-        if ($user->hasMedia('qecode')) {
-            toast('User Has Already QR Code.', 'warning');
+        if ($user->hasMedia('qrcode')) {
+            toast('User already has a QR code.', 'warning');
             return redirect()->back();
         }
 
-        // Generate QR code and save it to storage (https://github.com/endroid/qr-code)
-        $qrCode = Builder::create()
-                ->writer(new PngWriter())
-                ->data($user->userid)
-                ->size(300)
-                ->margin(10)
-                ->build();
-        $qrCodePath = 'qrcodes/' . $user->userid . '.png';
-        Storage::disk('public')->put($qrCodePath, $qrCode->getString());
+        // Generate and store QR code
+        $qrCodeFilePath = $this->generateAndStoreQrCode($user);
+
+        if (!$qrCodeFilePath || !file_exists($qrCodeFilePath)) {
+            toast('QR Code file could not be created.', 'error');
+            return redirect()->back();
+        }
 
         // Save the QR code file as a media item
-        // Update the path from App\Services\MediaLibrary\PathGenerators\UserPathGenerator
-        $user->addMedia(storage_path('app/public/' . $qrCodePath))
-             ->toMediaCollection('qrcode');
+        $user->addMedia($qrCodeFilePath)->toMediaCollection('qrcode');
 
-        toast('QR Code Generated Successfully.', 'success');
+        toast('QR Code generated successfully.', 'success');
         return redirect()->back();
     }
 
@@ -300,21 +327,21 @@ class UserService
             return redirect()->back();
         }
 
-        // Generate Barcode using Picqer Barcode Generator
-        $generator = new BarcodeGeneratorPNG();
-        $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128); // Generates CODE 128 barcode
-        $barcodePath = 'barcodes/' . $user->userid . '.png';
+        // Generate barcode image
+        $barcodeFilePath = $this->generateAndStoreBarcode($user);
 
-        // Save the barcode to storage
-        Storage::disk('public')->put($barcodePath, $barcodeData);
+        if (!$barcodeFilePath || !file_exists($barcodeFilePath)) {
+            toast('Barcode file could not be created.', 'error');
+            return redirect()->back();
+        }
 
         // Save the barcode file as a media item
-        $user->addMedia(storage_path('app/public/' . $barcodePath))
-            ->toMediaCollection('barcode');
+        $user->addMedia($barcodeFilePath)->toMediaCollection('barcode');
 
         toast('Barcode generated successfully.', 'success');
         return redirect()->back();
     }
+
 
 
     public function downloadAllBarcodes()
@@ -347,5 +374,94 @@ class UserService
 
         // Return the ZIP file as a downloadable response
         return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+    }
+
+
+
+
+
+
+    /**
+     * Generates a QR code and stores it in the appropriate directory.
+     *
+     * @param User $user
+     * @return string|null The file path of the stored QR code, or null if failed.
+     */
+    private function generateAndStoreQrCode(User $user)
+    {
+        $qrCode = Builder::create()
+            ->writer(new PngWriter())
+            ->data($user->userid)
+            ->size(300)
+            ->margin(10)
+            ->build();
+
+        $qrCodeDirectory = $this->getQrCodeDirectory();
+        if (!$this->ensureDirectoryExists($qrCodeDirectory)) {
+            return null;
+        }
+
+        $qrCodeFilePath = $qrCodeDirectory . "/{$user->userid}.png";
+        file_put_contents($qrCodeFilePath, $qrCode->getString());
+
+        return $qrCodeFilePath;
+    }
+
+    /**
+     * Determines the QR code storage path based on tenancy.
+     *
+     * @return string
+     */
+    private function getQrCodeDirectory()
+    {
+        return tenancy()->tenant
+            ? storage_path('app/public/tenants/' . tenant()->id . '/qrcodes')
+            : storage_path('app/public/qrcodes');
+    }
+
+
+    /**
+     * Generates a barcode and stores it in the appropriate directory.
+     *
+     * @param User $user
+     * @return string|null The file path of the stored barcode, or null if failed.
+     */
+    private function generateAndStoreBarcode(User $user)
+    {
+        $generator = new BarcodeGeneratorPNG();
+        $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128);
+
+        $barcodeDirectory = $this->getBarcodeDirectory();
+        if (!$this->ensureDirectoryExists($barcodeDirectory)) {
+            return null;
+        }
+
+        $barcodeFilePath = $barcodeDirectory . "/{$user->userid}.png";
+        file_put_contents($barcodeFilePath, $barcodeData);
+
+        return $barcodeFilePath;
+    }
+
+    /**
+     * Determines the barcode storage path based on tenancy.
+     *
+     * @return string
+     */
+    private function getBarcodeDirectory()
+    {
+        return tenancy()->tenant
+            ? storage_path('app/public/tenants/' . tenant()->id . '/barcodes')
+            : storage_path('app/public/barcodes');
+    }
+
+    /**
+     * Ensures the given directory exists, creating it if necessary.
+     *
+     * @param string $directory
+     * @return bool
+     */
+    private function ensureDirectoryExists($directory)
+    {
+        return file_exists($directory) || mkdir($directory, 0777, true);
     }
 }
