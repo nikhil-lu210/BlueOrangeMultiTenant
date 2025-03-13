@@ -124,6 +124,8 @@
                                     // Mark this message as notified
                                     newMessageNotification.push(message.id);
                                     localStorage.setItem("newMessageNotification", JSON.stringify(newMessageNotification));
+
+                                    playNotificationSound();
                                 } else if (Notification.permission !== "denied") {
                                     Notification.requestPermission();
                                 }
@@ -133,6 +135,13 @@
                 }).fail(function (err) {
                     console.error("Error fetching new messages:", err);
                 });
+            }
+
+            function playNotificationSound() {
+                let sound = document.getElementById("notificationSound");
+                if (sound) {
+                    sound.play().catch(error => console.error("Notification sound failed:", error));
+                }
             }
 
             // Request notification permission when the page loads (only if not denied)

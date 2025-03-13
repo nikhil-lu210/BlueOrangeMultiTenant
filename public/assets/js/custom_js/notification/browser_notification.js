@@ -9,6 +9,9 @@ $(document).ready(function () {
                 $.each(data, function (index, notification) {
                     if (!isNotificationShown(notification.id)) {
                         showBrowserNotification(notification.data.title, notification.data.message, notification.data.url, notification.id);
+
+                        // playNotificationSound(); // Play notification sound
+
                         storeNotification(notification.id); // Mark as shown
                     }
                 });
@@ -27,6 +30,13 @@ $(document).ready(function () {
                 window.open(url, '_blank');
                 markSingleNotificationAsRead(notificationId);
             };
+        }
+    }
+
+    function playNotificationSound() {
+        let sound = document.getElementById("notificationSound");
+        if (sound) {
+            sound.play().catch(error => console.error("Notification sound failed:", error));
         }
     }
 
