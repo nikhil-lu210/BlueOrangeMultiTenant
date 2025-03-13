@@ -65,6 +65,13 @@ class AppServiceProvider extends ServiceProvider
         $fullDomain = request()->getHost();
         $subdomain = Str::before($fullDomain, '.');
 
+        // Ensure the database connection is available and the tenants table exists
+        if (!Schema::hasTable('tenants')) {
+            // Fallback to the landlord connection if the tenants table doesn't exist
+            config(['database.default' => 'mysql_landlord']);
+            return;
+        }
+
         // Try to find a tenant based on the subdomain
         $tenant = Tenant::whereHas('domains', function ($query) use ($subdomain) {
             $query->where('domain', $subdomain);
