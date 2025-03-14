@@ -10,7 +10,7 @@
                     <i class="ti ti-menu-2 ti-sm align-middle"></i>
                 </button>
                 <!-- Mobile menu toggle: End-->
-                <a href="landing-page.html" class="app-brand-link">
+                <a href="{{ route('website.homepage.index') }}" class="app-brand-link">
                     <span class="app-brand-logo demo">
                         <img src="{{ asset(config('app.logo')) }}" width="90%">
                     </span>
