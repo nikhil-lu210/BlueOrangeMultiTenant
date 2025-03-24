@@ -104,7 +104,7 @@
 
 @section('custom_script')
     {{--  External Custom Javascript  --}}
-    <script>
+    {{-- <script>
         $(document).ready(function () {
             function fetchNewGroupMessages() {
                 $.get("{{ route('administration.chatting.group.browser.fetch_unread') }}", function (data) {
@@ -119,9 +119,12 @@
                                         icon: "https://cdn-icons-png.flaticon.com/512/1827/1827301.png"
                                     });
 
-                                    // notif.onclick = function () {
-                                    //     window.open("/chat/group/" + message.chatting_group_id, "_blank");
-                                    // };
+                                    notif.onclick = function () {
+                                        let groupChatUrl = "{{ route('administration.chatting.group.show', ['group' => '__GROUP__', 'groupid' => '__GROUPID__']) }}";
+                                        groupChatUrl = groupChatUrl.replace("__GROUP__", message.group.id).replace("__GROUPID__", message.group.groupid);
+
+                                        window.open(groupChatUrl, "_blank");
+                                    };
 
                                     // Mark this message as notified
                                     newGroupMessageNotifications.push(message.id);
@@ -145,5 +148,5 @@
             // Check for new messages every 30 seconds
             setInterval(fetchNewGroupMessages, 30000);
         });
-    </script>
+    </script> --}}
 @endsection
