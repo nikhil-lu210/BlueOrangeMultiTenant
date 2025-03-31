@@ -107,8 +107,9 @@ class UserController extends Controller
     {
         $user = $this->userService->getUser($user);
         $roles = $this->userService->getAllRoles();
+        $religions = $this->userService->getAllReligions();
 
-        return view('administration.settings.user.edit', compact(['roles', 'user']));
+        return view('administration.settings.user.edit', compact(['roles', 'religions', 'user']));
     }
 
     /**

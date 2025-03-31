@@ -19,6 +19,7 @@ use Picqer\Barcode\BarcodeGeneratorPNG;
 use App\Models\EmployeeShift\EmployeeShift;
 use App\Mail\Administration\User\UserCredentialsMail;
 use App\Mail\Administration\User\UserStatusUpdateNotifyMail;
+use App\Models\Religion\Religion;
 use App\Notifications\Administration\NewUserRegistrationNotification;
 
 class UserService
@@ -27,12 +28,11 @@ class UserService
     {
         $userIds = auth()->user()->user_interactions->pluck('id');
 
-
         $teamLeaders = User::whereIn('id', $userIds)
                             ->whereStatus('Active')
                             ->get()
                             ->filter(function ($user) {
-                                return $user->hasAnyPermission(['Daily Work Update Everything', 'Daily Work Update Update']);
+                                return $user->hasAnyPermission(['User Everything', 'User Create', 'User Update', 'User Delete']);
                             });
 
         $roles = $this->getAllRoles();
@@ -47,12 +47,13 @@ class UserService
         }
 
         // If a team leader ID is provided, filter employees under them
-        if ($request->team_leader_id) {
-            $teamLeader = User::find($request->team_leader_id);
-            if ($teamLeader) {
-                $employeeIds = $teamLeader->tl_employees->pluck('id');
-                $query->whereIn('id', $employeeIds);
-            }
+        if ($request->filled('team_leader_id')) {
+            $teamLeader = User::findOrFail($request->team_leader_id);
+
+            $query->whereHas('employee_team_leaders', function ($tlQuery) use ($teamLeader) {
+                $tlQuery->where('is_active', true)
+                    ->where('team_leader_id', $teamLeader->id);
+            });
         }
 
         // Apply role filter if provided
@@ -90,6 +91,11 @@ class UserService
     public function getAllRoles()
     {
         return Role::select(['id', 'name'])->orderBy('name')->get();
+    }
+
+    public function getAllReligions()
+    {
+        return Religion::select(['id', 'name'])->get();
     }
 
     public function createUser(array $data)
@@ -170,7 +176,7 @@ class UserService
         }
 
         // Fetch the user with the required relationships
-        return User::with(['roles', 'media'])->findOrFail($user->id);
+        return User::with(['roles', 'employee.religion', 'media'])->findOrFail($user->id);
     }
 
 
@@ -203,6 +209,8 @@ class UserService
                     'official_email' => $data['official_email'],
                     'personal_contact_no' => $data['personal_contact_no'],
                     'official_contact_no' => $data['official_contact_no'],
+                    'religion_id' => $data['religion_id'],
+                    'gender' => $data['gender'],
                 ]);
             }
 
@@ -300,23 +308,27 @@ class UserService
 
     public function generateQrCode(User $user)
     {
-        if ($user->hasMedia('qrcode')) {
-            toast('User already has a QR code.', 'warning');
+        if ($user->hasMedia('qecode')) {
+            toast('User Has Already QR Code.', 'warning');
             return redirect()->back();
         }
 
-        // Generate and store QR code
-        $qrCodeFilePath = $this->generateAndStoreQrCode($user);
-
-        if (!$qrCodeFilePath || !file_exists($qrCodeFilePath)) {
-            toast('QR Code file could not be created.', 'error');
-            return redirect()->back();
-        }
+        // Generate QR code and save it to storage (https://github.com/endroid/qr-code)
+        $qrCode = Builder::create()
+                ->writer(new PngWriter())
+                ->data($user->userid)
+                ->size(300)
+                ->margin(10)
+                ->build();
+        $qrCodePath = 'qrcodes/' . $user->userid . '.png';
+        Storage::disk('public')->put($qrCodePath, $qrCode->getString());
 
         // Save the QR code file as a media item
-        $user->addMedia($qrCodeFilePath)->toMediaCollection('qrcode');
+        // Update the path from App\Services\MediaLibrary\PathGenerators\UserPathGenerator
+        $user->addMedia(storage_path('app/public/' . $qrCodePath))
+             ->toMediaCollection('qrcode');
 
-        toast('QR Code generated successfully.', 'success');
+        toast('QR Code Generated Successfully.', 'success');
         return redirect()->back();
     }
 
@@ -327,21 +339,21 @@ class UserService
             return redirect()->back();
         }
 
-        // Generate barcode image
-        $barcodeFilePath = $this->generateAndStoreBarcode($user);
+        // Generate Barcode using Picqer Barcode Generator
+        $generator = new BarcodeGeneratorPNG();
+        $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128); // Generates CODE 128 barcode
+        $barcodePath = 'barcodes/' . $user->userid . '.png';
 
-        if (!$barcodeFilePath || !file_exists($barcodeFilePath)) {
-            toast('Barcode file could not be created.', 'error');
-            return redirect()->back();
-        }
+        // Save the barcode to storage
+        Storage::disk('public')->put($barcodePath, $barcodeData);
 
         // Save the barcode file as a media item
-        $user->addMedia($barcodeFilePath)->toMediaCollection('barcode');
+        $user->addMedia(storage_path('app/public/' . $barcodePath))
+            ->toMediaCollection('barcode');
 
         toast('Barcode generated successfully.', 'success');
         return redirect()->back();
     }
-
 
 
     public function downloadAllBarcodes()
@@ -374,94 +386,5 @@ class UserService
 
         // Return the ZIP file as a downloadable response
         return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
-    }
-
-
-
-
-
-
-    /**
-     * Generates a QR code and stores it in the appropriate directory.
-     *
-     * @param User $user
-     * @return string|null The file path of the stored QR code, or null if failed.
-     */
-    private function generateAndStoreQrCode(User $user)
-    {
-        $qrCode = Builder::create()
-            ->writer(new PngWriter())
-            ->data($user->userid)
-            ->size(300)
-            ->margin(10)
-            ->build();
-
-        $qrCodeDirectory = $this->getQrCodeDirectory();
-        if (!$this->ensureDirectoryExists($qrCodeDirectory)) {
-            return null;
-        }
-
-        $qrCodeFilePath = $qrCodeDirectory . "/{$user->userid}.png";
-        file_put_contents($qrCodeFilePath, $qrCode->getString());
-
-        return $qrCodeFilePath;
-    }
-
-    /**
-     * Determines the QR code storage path based on tenancy.
-     *
-     * @return string
-     */
-    private function getQrCodeDirectory()
-    {
-        return tenancy()->tenant
-            ? storage_path('app/public/tenants/' . tenant()->id . '/qrcodes')
-            : storage_path('app/public/qrcodes');
-    }
-
-
-    /**
-     * Generates a barcode and stores it in the appropriate directory.
-     *
-     * @param User $user
-     * @return string|null The file path of the stored barcode, or null if failed.
-     */
-    private function generateAndStoreBarcode(User $user)
-    {
-        $generator = new BarcodeGeneratorPNG();
-        $barcodeData = $generator->getBarcode($user->userid, $generator::TYPE_CODE_128);
-
-        $barcodeDirectory = $this->getBarcodeDirectory();
-        if (!$this->ensureDirectoryExists($barcodeDirectory)) {
-            return null;
-        }
-
-        $barcodeFilePath = $barcodeDirectory . "/{$user->userid}.png";
-        file_put_contents($barcodeFilePath, $barcodeData);
-
-        return $barcodeFilePath;
-    }
-
-    /**
-     * Determines the barcode storage path based on tenancy.
-     *
-     * @return string
-     */
-    private function getBarcodeDirectory()
-    {
-        return tenancy()->tenant
-            ? storage_path('app/public/tenants/' . tenant()->id . '/barcodes')
-            : storage_path('app/public/barcodes');
-    }
-
-    /**
-     * Ensures the given directory exists, creating it if necessary.
-     *
-     * @param string $directory
-     * @return bool
-     */
-    private function ensureDirectoryExists($directory)
-    {
-        return file_exists($directory) || mkdir($directory, 0777, true);
     }
 }
