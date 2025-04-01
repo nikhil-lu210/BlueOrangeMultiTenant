@@ -206,17 +206,20 @@
                         <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                        {{-- <a class="dropdown-item" href="javascript:void(0);" onclick="document.getElementById('logoutForm').submit();">
-                            <i class="ti ti-logout me-2 ti-sm"></i>
-                            <span class="align-middle">{{ __('topnav.logout') }}</span>
-                        </a> --}}
-                        <form id="logoutForm" action="{{ route('logout') }}" method="POST">
-                            @csrf
-                            <button type="submit" class="dropdown-item">
+                        @if (!session()->has('impersonate'))
+                            <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                 <i class="ti ti-logout me-2 ti-sm"></i>
                                 <span class="align-middle">{{ __('topnav.logout') }}</span>
                             </a>
-                        </form>
+                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                @csrf
+                            </form>
+                        @else
+                            <a class="dropdown-item confirm-warning" href="{{ route('custom_auth.impersonate.revert') }}">
+                                <i class="ti ti-logout me-2 ti-sm"></i>
+                                <span class="align-middle">{{ __('Logout & Revert') }}</span>
+                            </a>
+                        @endif
                     </li>
                 </ul>
             </li>

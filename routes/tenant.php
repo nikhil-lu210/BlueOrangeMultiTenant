@@ -59,4 +59,6 @@ Route::middleware([
     ======================< Administration Routes >=================
     ==============================================================*/
     include_once 'administration/administration.php';
+
+    include_once 'custom_auth/custom_auth.php';
 });
